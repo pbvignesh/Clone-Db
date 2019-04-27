@@ -3,6 +3,13 @@
 #include <string.h>
 #include <stdbool.h>
 
+enum META_COMMAND_RESULT_T {
+    META_COMMAND_SUCCESS,
+    META_COMMAND_INVALID
+};
+
+typedef enum META_COMMAND_RESULT_T META_COMMAND_RESULT;
+
 /**
  * Function to print the Clone Lite Prompt
  *
@@ -26,6 +33,40 @@ void get_input(char * buffer)
 }
 
 /**
+ * Function to check if command is a meta command
+ *
+ * @param buffer The buffer containing the command
+ *
+ * @return bool Whether it is a meta command or not
+ */
+bool is_meta_command(char * buffer)
+{
+    if (buffer[0] == '.') {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Function to execute meta commands
+ *
+ * @param buffer The buffer containing the command
+ *
+ * @return META_COMMAND_RESULT The status of running the command
+ */
+META_COMMAND_RESULT execute_meta_command(char * buffer)
+{
+    if (strcmp(buffer, ".exit") == 0) {
+        printf("[+] Exiting. Good Bye!");
+
+        exit(EXIT_SUCCESS);
+    }
+
+    return META_COMMAND_INVALID;
+}
+
+/**
  * Main Function
  *
  * @param argc: The argument count
@@ -40,9 +81,14 @@ int main(int argc, char * argv[])
         print_prompt();
         get_input(buffer);
 
-        if (strcmp(buffer, ".exit") == 0) {
-            printf("[+] Exiting. Good Bye!");
-            exit(EXIT_SUCCESS);
+        if (is_meta_command(buffer)) {
+            switch (execute_meta_command(buffer)) {
+                case META_COMMAND_SUCCESS:
+                    break;
+                case META_COMMAND_INVALID:
+                    printf("[+] Invalid Command '%s'.\n", buffer);
+                    break;
+            }
         } else {
             printf("[+] Invalid Command '%s'.\n", buffer);
         }
