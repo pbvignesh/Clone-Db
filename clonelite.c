@@ -3,6 +3,8 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define BUFFER_SIZE 100
+
 enum META_COMMAND_RESULT_T {
     META_COMMAND_SUCCESS,
     META_COMMAND_FAILURE_INVALID
@@ -22,9 +24,15 @@ typedef enum META_COMMAND_RESULT_T META_COMMAND_RESULT;
 typedef enum PREPARE_COMMAND_RESULT_T PREPARE_COMMAND_RESULT;
 typedef enum STATEMENT_TYPE_T STATEMENT_TYPE;
 typedef struct Statement_t Statement;
+typedef struct Buffer_t Buffer;
 
 struct Statement_t {
     STATEMENT_TYPE type;
+};
+
+struct Buffer_t {
+    char * buffer;
+    size_t size;
 };
 
 /**
@@ -44,9 +52,12 @@ void print_prompt()
  *
  * @return void
  */
-void get_input(char * buffer)
+void get_input(Buffer * buffer)
 {
-    scanf("%s", buffer);
+    ssize_t bytes_read = getline(&buffer->buffer, &buffer->size, stdin);
+
+    // Ignoring Trailing newline
+    buffer->buffer[bytes_read - 1] = 0;
 }
 
 /**
@@ -56,9 +67,9 @@ void get_input(char * buffer)
  *
  * @return bool Whether it is a meta command or not
  */
-bool is_meta_command(char * buffer)
+bool is_meta_command(Buffer * buffer)
 {
-    if (buffer[0] == '.') {
+    if (buffer->buffer[0] == '.') {
         return true;
     }
 
@@ -72,9 +83,9 @@ bool is_meta_command(char * buffer)
  *
  * @return META_COMMAND_RESULT The status of running the command
  */
-META_COMMAND_RESULT execute_meta_command(char * buffer)
+META_COMMAND_RESULT execute_meta_command(Buffer * buffer)
 {
-    if (strcmp(buffer, ".exit") == 0) {
+    if (strcmp(buffer->buffer, ".exit") == 0) {
         printf("[+] Exiting. Good Bye!");
 
         exit(EXIT_SUCCESS);
@@ -91,15 +102,15 @@ META_COMMAND_RESULT execute_meta_command(char * buffer)
  *
  * @return PREPARE_COMMAND_RESULT The status of preparing the command
  */
-PREPARE_COMMAND_RESULT prepare_statement(char * buffer, Statement * statement)
+PREPARE_COMMAND_RESULT prepare_statement(Buffer * buffer, Statement * statement)
 {
-    if (strncmp(buffer, "insert", 6) == 0) {
+    if (strncmp(buffer->buffer, "insert", 6) == 0) {
         statement->type = STATEMENT_INSERT;
 
         return PREPARE_SUCCESS;
     }
 
-    if (strncmp(buffer, "select", 6) == 0) {
+    if (strncmp(buffer->buffer, "select", 6) == 0) {
         statement->type = STATEMENT_SELECT;
 
         return PREPARE_SUCCESS;
@@ -128,6 +139,20 @@ void execute_statement(Statement * statement)
 }
 
 /**
+ * Method to create an empty buffer
+ *
+ * @return buffer An empty buffer
+ */
+Buffer * create_buffer()
+{
+    Buffer * buffer = (Buffer *) malloc (sizeof(Buffer));
+    buffer->size = BUFFER_SIZE;
+    buffer->buffer = NULL;
+
+    return buffer;
+}
+
+/**
  * Main Function
  *
  * @param argc: The argument count
@@ -136,7 +161,7 @@ void execute_statement(Statement * statement)
  */
 int main(int argc, char * argv[])
 {
-    char buffer[100];
+    Buffer * buffer = create_buffer();
 
     while (true) {
         print_prompt();
@@ -147,7 +172,7 @@ int main(int argc, char * argv[])
                 case META_COMMAND_SUCCESS:
                     continue;
                 case META_COMMAND_FAILURE_INVALID:
-                    printf("[+] Invalid Command '%s'.\n", buffer);
+                    printf("[+] Invalid Command '%s'.\n", buffer->buffer);
                     continue;
             }
         } else {
@@ -156,7 +181,7 @@ int main(int argc, char * argv[])
                 case PREPARE_SUCCESS:
                     break;
                 case PREPARE_FAILURE_INVALID:
-                    printf("[+] Invalid Keyword at start of '%s'\n", buffer);
+                    printf("[+] Invalid Keyword at start of '%s'\n", buffer->buffer);
                     continue;
             }
 
