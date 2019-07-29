@@ -1,2 +1,2 @@
 # Clone Db
-A Noob clone of sqlite
+A small simple implementation of a database in C++
